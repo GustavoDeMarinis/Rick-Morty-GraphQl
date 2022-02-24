@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { FILTERED_CHARACTERS } from "../querys";
+import { useCallback, useEffect, useState } from "react";
+import { FILTERED_CHARACTERS } from "../lib/querys";
 import Link from "next/link";
-import { useQuery, useLazyQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client";
+import { Button, Input, Stack } from "@chakra-ui/react";
 
 export interface ICharacter {
   id: string;
@@ -12,34 +13,17 @@ export interface ICharacter {
   };
   image: string;
 }
-[];
 
 const index: React.FC = () => {
-  const [characters, setCharacters] = useState<ICharacter | []>([]);
   const [filter, setFilter] = useState("");
-  const { data, loading } = useQuery(FILTERED_CHARACTERS);
-  const [getCharacters, result] = useLazyQuery(FILTERED_CHARACTERS);
+  const { data, refetch } = useQuery(FILTERED_CHARACTERS);
 
-  useEffect(() => {
-    if (data) {
-      setCharacters(data.characters.results);
-    }
-  }, [loading]);
-
-  useEffect(() => {
-    if (result.data) {
-      setCharacters(result.data.characters?.results);
-    }
-  }, [result]);
-
-  const showPerson = (value: string) => {
-    const filterResult = getCharacters({
-      variables: { nameToFilterBy: { name: value } },
-    });
-  };
+  const filterCharacters = useCallback((filter) => {
+    refetch({ nameToFilterBy: { name: filter } });
+  }, []);
 
   const renderList = (): JSX.Element[] => {
-    return characters?.map(({ id, name, ...character }: ICharacter) => {
+    return data?.characters?.results.map(({ id, name }: ICharacter) => {
       return (
         <Link href={`/characters/${id}`} key={id}>
           {name}
@@ -50,35 +34,30 @@ const index: React.FC = () => {
   return (
     <div>
       <div>
-        <input
+        <Input
           type="text"
-          style={{ border: "2px solid black", height: "40px" }}
+          w="200"
+          placeholder="Filter by Name"
+          size="md"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setFilter(e.target.value)
           }
         />
-        <button
-          style={{
-            border: "2px solid black",
-            backgroundColor: "lightblue",
-            height: "40px",
-            marginLeft: "10px",
-          }}
-          onClick={() => showPerson(filter)}
+        <Button
+          ml="2"
+          _hover={{ bg: "#009A40" }}
+          _active={{ bg: "#008939" }}
+          bg="#00AF49"
+          color="white"
+          as="a"
+          onClick={() => filterCharacters(filter)}
         >
           Filter
-        </button>
+        </Button>
       </div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          fontSize: "23px",
-          color: "blue",
-        }}
-      >
+      <Stack spacing={3} m="3">
         {renderList()}
-      </div>
+      </Stack>
     </div>
   );
 };
